@@ -23,7 +23,7 @@
 
 ## Pipeline Skeleton
 
-Use `/setup-pipeline <name>` to create a new pipeline at `/home/lpantano/pipelines/nextflow-<name>/`.
+Use `/setup-pipeline <name>` to create a new pipeline at `$PIPELINES_DIR/nextflow-<name>/`.
 
 The skeleton includes:
 - `main.nf` - Workflow that reads samplesheet (no processes yet)

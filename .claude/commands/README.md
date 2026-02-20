@@ -14,7 +14,7 @@ Creates a new Nextflow pipeline skeleton with a fully configured development env
 ```
 
 **What it does:**
-1. Creates the complete pipeline skeleton at `/home/lpantano/pipelines/nextflow-<name>/`
+1. Creates the complete pipeline skeleton at `$PIPELINES_DIR/nextflow-<name>/`
 2. Generates all scaffolding files:
    - `main.nf` - Workflow entry point with samplesheet parsing (no processes yet)
    - `nextflow.config` - Configuration with local, gcp, and test profiles
@@ -29,7 +29,7 @@ Creates a new Nextflow pipeline skeleton with a fully configured development env
 
 **Example:**
 ```
-# Creates /home/lpantano/pipelines/nextflow-rnaseq
+# Creates $PIPELINES_DIR/nextflow-rnaseq
 /setup-pipeline rnaseq
 ```
 
@@ -42,7 +42,7 @@ Interactive agent that helps you add process steps to an existing pipeline, one 
 **Usage:**
 ```
 # First, cd into your pipeline directory
-cd /home/lpantano/pipelines/nextflow-<name>
+cd $PIPELINES_DIR/nextflow-<name>
 
 # Then invoke the command
 /add-process
@@ -50,7 +50,7 @@ cd /home/lpantano/pipelines/nextflow-<name>
 
 **What it does:**
 1. Asks what process/step you want to add
-2. Studies existing pipelines in `/home/lpantano/pipelines/` to learn conventions
+2. Studies existing pipelines in `$PIPELINES_DIR/` to learn conventions
 3. For each new step, creates/modifies:
    - Process module file at `modules/local/<process_name>/main.nf`
    - Include statement in `main.nf`

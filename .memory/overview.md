@@ -11,7 +11,7 @@
 /setup-pipeline my-pipeline-name
 ```
 
-This creates `/home/lpantano/pipelines/nextflow-<name>/` with full skeleton, runs `pixi install`, and initializes git.
+This creates `$PIPELINES_DIR/nextflow-<name>/` with full skeleton, runs `pixi install`, and initializes git.
 
 ## Core Principles
 

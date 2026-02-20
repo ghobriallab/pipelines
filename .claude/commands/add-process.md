@@ -4,8 +4,8 @@ You are helping the user add a new process/step to their existing Nextflow pipel
 
 ## Environment Setup
 
-Before doing anything else, read `/home/lpantano/pipelines/.env` to load GCP configuration values
-(`GCP_PROJECT`, `GCP_REGION`, `GCP_WORK_DIR`, `ARTIFACT_REGISTRY`, `PIPELINES_DIR`).
+Before doing anything else, read `$PIPELINES_DIR/.env` (default: `$HOME/pipelines/.env`) to load GCP
+configuration values (`GCP_PROJECT`, `GCP_REGION`, `GCP_WORK_DIR`, `ARTIFACT_REGISTRY`, `PIPELINES_DIR`).
 Use these values when writing container image paths, registry URLs, or GCP config in generated files.
 
 ## Before You Begin
@@ -21,16 +21,13 @@ Use these values when writing container image paths, registry URLs, or GCP confi
 
 ## Learning from Existing Pipelines
 
-Before creating the new process, study existing pipelines in `/home/lpantano/pipelines/` to learn the established patterns:
+Before creating the new process, study existing pipelines in `$PIPELINES_DIR` to learn the established patterns:
 
-1. **Read 2-3 existing process modules** to understand conventions. Pick from:
-   - `/home/lpantano/pipelines/nextflow-fastq-merge/modules/local/merge_fastqs/main.nf`
-   - `/home/lpantano/pipelines/nextflow-arcashla/modules/local/arcashla_extract/main.nf`
-   - `/home/lpantano/pipelines/nextflow-cd45isoform/modules/local/samtools_index/main.nf`
-   - `/home/lpantano/pipelines/nextflow-cellranger/modules/local/cellranger_count/main.nf`
-   - `/home/lpantano/pipelines/nextflow-bclconvert/modules/local/bclconvert/main.nf`
+1. **Read 2-3 existing process modules** to understand conventions. Glob
+   `$PIPELINES_DIR/nextflow-*/modules/local/*/main.nf` and pick a representative
+   sample (prefer variety: one simple, one with multiple inputs, one with a custom container).
 
-2. **Read the canonical process template** at `/home/lpantano/pipelines/.memory/templates.md`
+2. **Read the canonical process template** at `$PIPELINES_DIR/.memory/templates.md`
 
 3. **Read the current pipeline's files** to understand the current state:
    - `main.nf` — existing includes, workflow chain, samplesheet structure
@@ -147,7 +144,7 @@ Use sensible defaults based on the tool's requirements. If the process needs `ex
 If a custom container is needed (no Seqera Wave container available):
 - Add the tool installation to `docker/Dockerfile` using `conda install -c conda-forge -c bioconda <tool>`
 - Remind the user to run `cd docker && ./build_and_push.sh` after editing
-- Update the container directive in the process module to point to the Artifact Registry path: `us-docker.pkg.dev/ghobrial-pipelines/<repo>/<image>:<version>`
+- Update the container directive in the process module to point to the Artifact Registry path: `$ARTIFACT_REGISTRY/$GCP_PROJECT/<repo>/<image>:<version>`
 
 ### Step 6: Update params if needed
 
