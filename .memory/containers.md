@@ -71,6 +71,44 @@ RUN conda install -y -c conda-forge -c bioconda \
     && conda clean -afy
 ```
 
+If the tool repository has an env file, use that to install dependencies.
+
+### Conda-based with baked-in reference database (arcashla pattern)
+
+Some tools (arcasHLA, STAR, kallisto) require a reference database that must be
+downloaded at build time. Key lessons from arcasHLA:
+
+1. **Always install `git`** if the tool fetches reference via `git clone`
+2. **Use a pinned version** (`--version X.Y.Z`) instead of `--update` / `--latest` —
+   large reference repos (e.g. IMGTHLA) use Git LFS; without `git-lfs`, clone only
+   downloads pointer files and the real data is silently missing
+3. Find the recommended pinned version in the tool's own test docs or README
+
+```dockerfile
+FROM continuumio/miniconda3:latest
+LABEL maintainer="Ghobrial Lab"
+
+# git is required if the tool fetches reference via git clone
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git curl pigz \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN conda install -y -c conda-forge -c bioconda \
+        tool-name \
+    && conda clean -afy
+
+# Use pinned version to avoid Git LFS pointer issues
+RUN tool-name reference --version X.Y.Z
+```
+
+### Build flag: always use `--platform linux/amd64`
+
+GCP Batch VMs are x86_64. Always pass `--platform linux/amd64` when building,
+especially on Apple Silicon Macs:
+```bash
+docker build --platform linux/amd64 -t image:tag .
+```
+
 ## Build and Push Script
 
 Claude fills in PROJECT_ID and REGION defaults from `$GCP_PROJECT` and `$ARTIFACT_REGISTRY` env vars:
@@ -101,7 +139,7 @@ Registry prefix `$ARTIFACT_REGISTRY/$GCP_PROJECT` is read from env vars by Claud
 
 | Pipeline | Image | Source |
 |----------|-------|--------|
-| arcashla | `$ARTIFACT_REGISTRY/$GCP_PROJECT/arcashla/arcashla:latest` | Custom (ubuntu-based) |
+| arcashla | `$ARTIFACT_REGISTRY/$GCP_PROJECT/arcashla/arcashla:0.6.0` | Custom (conda-based, reference v3.24.0 baked in) |
 | bclconvert | `quay.io/nf-core/bclconvert:4.4.6` | Official nf-core |
 | cd45isoform | `community.wave.seqera.io/library/samtools:1.23--...` | Seqera Wave |
 | cd45isoform | `$ARTIFACT_REGISTRY/$GCP_PROJECT/cd45isoform/cd45isoform:0.1.0` | Custom |

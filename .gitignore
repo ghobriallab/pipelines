@@ -1,0 +1,8 @@
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+nextflow-*
+summit**
+prompt*
+*node_modules**
+*.env

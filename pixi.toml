@@ -1,0 +1,12 @@
+[workspace]
+authors = ["Lorena Pantano <lorena.pantano@gmail.com>"]
+channels = ["conda-forge", "bioconda"]
+name = "pipelines"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+nextflow = ">=25.10.4,<26"
+nf-core = ">=3.5.2,<4"
