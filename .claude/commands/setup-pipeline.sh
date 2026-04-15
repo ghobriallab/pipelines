@@ -344,23 +344,25 @@ cat > docker/build_and_push.sh <<'SCRIPT'
 #!/bin/bash
 
 # Build and push Docker image to Google Cloud Artifact Registry
-# Usage: ./build_and_push.sh [PROJECT_ID] [REGION] [REPOSITORY]
+# Usage: ./build_and_push.sh [ARTIFACT_REGISTRY] [REPOSITORY]
+#
+# ARTIFACT_REGISTRY already includes the project, e.g. us-docker.pkg.dev/my-project
+# Image path: ${ARTIFACT_REGISTRY}/${REPOSITORY}/${IMAGE_NAME}:${VERSION}
 
 set -e
 
-# Default values (override via args or set GCP_PROJECT / ARTIFACT_REGISTRY env vars before running)
-PROJECT_ID="${1:-GCP_PROJECT_PLACEHOLDER}"
-REGION="${2:-ARTIFACT_REGISTRY_PLACEHOLDER}"
-REPOSITORY="${3:-PIPELINE_NAME}"
-IMAGE_NAME="PIPELINE_NAME"
+# Default values — ARTIFACT_REGISTRY already includes the GCP project, never append PROJECT_ID
+REGISTRY="${1:-ARTIFACT_REGISTRY_PLACEHOLDER}"
+REPOSITORY="${2:-TOOL_NAME}"
+IMAGE_NAME="TOOL_NAME"
 VERSION="0.1.0"
 
-# Full image path
-FULL_IMAGE_PATH="${REGION}/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}:${VERSION}"
-LATEST_IMAGE_PATH="${REGION}/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}:latest"
+# Full image path — no PROJECT_ID segment, REGISTRY already contains it
+FULL_IMAGE_PATH="${REGISTRY}/${REPOSITORY}/${IMAGE_NAME}:${VERSION}"
+LATEST_IMAGE_PATH="${REGISTRY}/${REPOSITORY}/${IMAGE_NAME}:latest"
 
 echo "Building Docker image..."
-docker build -t ${IMAGE_NAME}:${VERSION} -t ${IMAGE_NAME}:latest .
+docker build --platform linux/amd64 -t ${IMAGE_NAME}:${VERSION} -t ${IMAGE_NAME}:latest .
 
 echo "Tagging image for Google Artifact Registry..."
 docker tag ${IMAGE_NAME}:${VERSION} ${FULL_IMAGE_PATH}
@@ -570,12 +572,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - N/A
 EOF
 
+# sed -i syntax differs: BSD (macOS) requires '', GNU (Linux) does not
+SED_INPLACE=(sed -i)
+if sed --version 2>/dev/null | grep -q GNU; then
+    SED_INPLACE=(sed -i)
+else
+    SED_INPLACE=(sed -i '')
+fi
+
 # Replace PIPELINE_NAME placeholder with actual name
 FULL_NAME="nextflow-$PIPELINE_NAME"
-sed -i "s/PIPELINE_NAME/$FULL_NAME/g" main.nf nextflow.config pixi.toml README.md docker/Dockerfile docker/build_and_push.sh
+"${SED_INPLACE[@]}" "s/PIPELINE_NAME/$FULL_NAME/g" main.nf nextflow.config pixi.toml README.md docker/Dockerfile docker/build_and_push.sh
 
 # Replace GCP placeholders with values from environment variables
-sed -i \
+"${SED_INPLACE[@]}" \
     -e "s|GCP_WORK_DIR_PLACEHOLDER|${GCP_WORK_DIR}|g" \
     -e "s|GCP_PROJECT_PLACEHOLDER|${GCP_PROJECT}|g" \
     -e "s|GCP_REGION_PLACEHOLDER|${GCP_REGION}|g" \

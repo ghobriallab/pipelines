@@ -18,8 +18,9 @@ check the URL exists always.
    Used in: fastq-merge
 
 4. **Custom GCP Artifact Registry** (when tool needs custom build):
-   `$ARTIFACT_REGISTRY/$GCP_PROJECT/<repo>/<image>:<version>`
+   `$ARTIFACT_REGISTRY/<repo>/<image>:<version>`
    Claude reads `$ARTIFACT_REGISTRY` and `$GCP_PROJECT` env vars to build the full path.
+   Always use `$ARTIFACT_REGISTRY` verbatim — never derive a regional variant like `us-east1-docker.pkg.dev`.
    Used in: arcashla, cd45isoform, cellranger
 
 ## Container Specification Patterns
@@ -36,7 +37,7 @@ process SAMTOOLS_INDEX {
 In nextflow.config (Claude fills in registry path from $ARTIFACT_REGISTRY/$GCP_PROJECT):
 ```groovy
 params {
-    tool_container = '$ARTIFACT_REGISTRY/$GCP_PROJECT/<repo>/<image>:<version>'
+    tool_container = '$ARTIFACT_REGISTRY/<repo>/<image>:<version>'
 }
 process {
     container = params.tool_container
@@ -119,7 +120,7 @@ set -e
 
 PROJECT_ID="${1:-$GCP_PROJECT}"
 REGION="${2:-$ARTIFACT_REGISTRY}"
-REPOSITORY="${3:-<pipeline>}"
+REPOSITORY="${3:-<tool>}"   # Repository is named after the tool, not the pipeline
 IMAGE_NAME="<tool>"
 VERSION="1.0.0"
 
@@ -135,14 +136,14 @@ docker push ${LATEST_IMAGE}
 
 ## Known Container Images in Use
 
-Registry prefix `$ARTIFACT_REGISTRY/$GCP_PROJECT` is read from env vars by Claude.
+Registry prefix is `$ARTIFACT_REGISTRY` (already includes project). Never append `/$GCP_PROJECT`.
 
 | Pipeline | Image | Source |
 |----------|-------|--------|
-| arcashla | `$ARTIFACT_REGISTRY/$GCP_PROJECT/arcashla/arcashla:0.6.0` | Custom (conda-based, reference v3.24.0 baked in) |
+| arcashla | `$ARTIFACT_REGISTRY/arcashla/arcashla:0.6.0` | Custom (conda-based, reference v3.24.0 baked in) |
 | bclconvert | `quay.io/nf-core/bclconvert:4.4.6` | Official nf-core |
 | cd45isoform | `community.wave.seqera.io/library/samtools:1.23--...` | Seqera Wave |
-| cd45isoform | `$ARTIFACT_REGISTRY/$GCP_PROJECT/cd45isoform/cd45isoform:0.1.0` | Custom |
-| cellranger | `$ARTIFACT_REGISTRY/$GCP_PROJECT/cellranger/cellranger:8.0.1` | Custom (ubuntu-based) |
+| cd45isoform | `$ARTIFACT_REGISTRY/cd45isoform/cd45isoform:0.1.0` | Custom |
+| cellranger | `$ARTIFACT_REGISTRY/cellranger/cellranger:8.0.1` | Custom (ubuntu-based) |
 | cellranger | `community.wave.seqera.io/library/souporcell_gxx:...` | Seqera Wave |
 | fastq-merge | `ubuntu:22.04` | Docker Hub |

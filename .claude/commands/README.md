@@ -2,39 +2,28 @@
 
 This directory contains Claude Code commands for pipeline development workflows.
 
-## Available Commands
+## Creating a new pipeline
 
-### `/build-pipeline` ← start here for new pipelines
+Address **Trinity** directly in the chat — Trinity is the orchestrator that handles the full lifecycle (skeleton → Docker → test data → local run → GCP run):
 
-Orchestrates the full pipeline lifecycle: skeleton → Docker → test data → local run → GCP run.
-
-**Usage:**
 ```
-/build-pipeline <pipeline-name>
+Trinity, I need a <name> pipeline that <does X with tool Y>.
 ```
 
-**What it does:**
-1. Runs `/setup-pipeline` to create the skeleton (or skips if it already exists)
-2. Asks 5 questions about the pipeline's purpose, tools, input data, and container strategy
-3. Spawns two agents **in parallel**:
-   - `docker-build` — resolves the container (public image or custom build + push)
-   - `get-test-data` — generates realistic minimal test data matched to the pipeline
-4. Runs `run-local` — stub test + full local test with auto-fix for common errors
-5. Runs `run-gcp` — verifies GCP setup, submits to Google Batch, monitors job
-6. Prints a final summary table with pass/fail for each stage
+Trinity spawns four specialized agents internally:
 
-**Example:**
-```
-/build-pipeline rnaseq
-```
+| Agent | Purpose |
+|-------|---------|
+| `docker-build.md` | Verifies or builds container images; pushes to Artifact Registry |
+| `get-test-data.md` | Creates minimal valid test data matched to the pipeline's input types |
+| `run-local.md` | Runs the pipeline locally; auto-fixes common config/container errors |
+| `run-gcp.md` | Verifies GCP environment; runs on Google Batch; monitors and diagnoses |
 
-**Agents used** (in `.claude/agents/`):
-- `docker-build.md` — container specialist
-- `get-test-data.md` — test data specialist
-- `run-local.md` — local execution specialist
-- `run-gcp.md` — GCP execution specialist
+Agents are NOT slash commands and cannot be invoked directly by the user.
 
 ---
+
+## Available Commands
 
 ### `/setup-pipeline`
 
@@ -100,19 +89,6 @@ cd nextflow-my-tool
 /add-process                   # Add first process (e.g., "samtools sort")
 /add-process                   # Add second process (e.g., "custom analysis")
 ```
-
-## Agents (`.claude/agents/`)
-
-Agents are prompt files spawned by the orchestrator — they are NOT slash commands
-and cannot be invoked directly by the user. Each agent receives pipeline context
-from the orchestrator in its task prompt.
-
-| Agent | Purpose |
-|-------|---------|
-| `docker-build.md` | Verifies or builds container images; pushes to Artifact Registry |
-| `get-test-data.md` | Creates minimal valid test data matched to the pipeline's input types |
-| `run-local.md` | Runs the pipeline locally; auto-fixes common config/container errors |
-| `run-gcp.md` | Verifies GCP environment; runs on Google Batch; monitors and diagnoses |
 
 ---
 
