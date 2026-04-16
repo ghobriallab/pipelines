@@ -1,3 +1,10 @@
+---
+name: get-test-data
+description: Populates a Nextflow pipeline's test_data/ directory with minimal, realistic input files and rewrites samplesheet_test.csv to match the pipeline's exact column expectations. Tries nf-core module fixtures first, then tool GitHub repos, then the nf-core test-datasets catalog, then synthetic data as a last resort.
+tools: Bash, Read, Edit, Write, Glob, Grep, WebFetch
+model: sonnet
+---
+
 # Get Test Data Agent
 
 You are the test data specialist for a Nextflow pipeline. Your job is to replace
@@ -85,60 +92,123 @@ If nf-core test data is found and downloaded → **skip 1b and Attempts 2–3**.
 
 ### 1b. Check the tool's own GitHub repository
 
-If the tool is not in nf-core, infer its GitHub repository:
-- Use the tool name to search: `https://api.github.com/search/repositories?q=<toolname>+in:name&sort=stars&per_page=5`
-- Pick the most likely match (highest stars, official org)
-- Common known repos: `mixcr` → `milaboratory/mixcr`, `cellranger` → `10XGenomics/cellranger`, `spaceranger` → `10XGenomics/spaceranger`
+**Step 1: Check the curated table first** (no API call needed)
 
-Browse the repository root for test data directories:
+| Tool | GitHub repo | Test data path |
+|------|-------------|----------------|
+| arcasHLA / arcashla | RabadanLab/arcasHLA | `tests/` |
+| mixcr | milaboratory/mixcr | `itests/src/test/resources/` |
+| trust4 | liulab-dfci/TRUST4 | `demo/` |
+| immunarch | immunomind/immunarch | `inst/extdata/` |
+| cellranger | 10XGenomics/cellranger | no public test data — note limitation |
+| spaceranger | 10XGenomics/spaceranger | no public test data — note limitation |
+| velocyto | velocyto-team/velocyto.py | `tests/` |
+| scVelo | theislab/scvelo | `tests/` |
+| macs2 / macs3 | macs3-project/MACS | `test/` |
+| htseq / htseq-count | htseq/htseq | `test_data/` |
+| kallisto | pachterlab/kallisto | `test/` |
+| salmon | COMBINE-lab/salmon | `tests/` |
+| hisat2 | DaehwanKimLab/hisat2 | `example/` |
+| stringtie | gpertea/stringtie | `tests/` |
+
+If the tool matches a row above:
+1. List the contents of the test data path:
+   `https://api.github.com/repos/<org>/<repo>/contents/<path>`
+2. Look for small files (<10 MB) matching the required input type
+3. Download any matching files to `test_data/` — this counts as **1 API call**
+
+**Step 2: If not in the table**, do a single GitHub search:
 ```
-https://api.github.com/repos/<org>/<repo>/contents/
+https://api.github.com/search/repositories?q=<toolname>+in:name&sort=stars&per_page=3
 ```
+Pick the top result. Then check **only these folder names** (one contents call):
+`test`, `tests`, `testdata`, `test-data`, `example`, `examples`, `demo`, `data`
 
-Look for folders named: `test`, `tests`, `testdata`, `test-data`, `example`, `examples`, `data`
-
-For each candidate folder, list its contents and check for small files (<10 MB) matching
-the required input type (FASTQ, BAM, VCF, CSV, etc.).
+**Cap: maximum 3 API calls total across Steps 1 and 2.** If nothing suitable is
+found after 3 calls, stop immediately and proceed to Attempt 2 — do not browse
+further.
 
 If suitable small files are found:
 1. Download them to `test_data/` using `curl -fsSL -o test_data/<filename> <raw_url>`
-2. For paired-end FASTQ: need at least 2 pairs (one per sample); if only one pair exists, use it for both sample1 and sample2
+2. For paired-end FASTQ: need at least 2 pairs (one per sample); if only one pair
+   exists, copy it for both sample1 and sample2
 
-If no public repo exists or no test data is found in any of the above folders → **proceed to Attempt 2**.
+If no usable test data found → **proceed to Attempt 2**.
 
 ---
 
-## Attempt 2: nf-core test-datasets by File Type
+## Attempt 2: nf-core test-datasets catalog (`test_data.config`)
 
-If Attempt 1 found nothing suitable, map the required input type to files from
-the nf-core test-datasets repository.
+If Attempt 1 found nothing suitable, fetch the nf-core catalog and grep it for
+files matching the required input type.
 
-Base URL: `https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/genomics/homo_sapiens/`
+### 2a. Fetch the catalog
 
-Use this lookup table:
+```bash
+curl -fsSL \
+  https://raw.githubusercontent.com/nf-core/modules/master/tests/config/test_data.config \
+  -o /tmp/nf_test_data.config
+```
 
-| Input type | Sample 1 file | Sample 2 file | Path suffix |
-|---|---|---|---|
-| FASTQ paired-end (RNA-seq / immune) | test_rnaseq_1.fastq.gz | test_rnaseq_2.fastq.gz | `illumina/fastq/` |
-| FASTQ paired-end (AIRR/immune with UMI) | test_airrseq_umi_R1.fastq.gz | test_airrseq_R2.fastq.gz | `illumina/fastq/` |
-| FASTQ paired-end (DNA) | test_1.fastq.gz | test_2.fastq.gz | `illumina/fastq/` |
-| FASTQ single-end | test_rnaseq_1.fastq.gz | test_rnaseq_2.fastq.gz | `illumina/fastq/` |
-| BAM (sorted + indexed) | NA12878.chr22.bam + .bai | NA19401.chr21_22.1X.bam + .bai | `illumina/bam/` |
-| BAM (RNA, sorted + indexed) | test.rna.paired_end.sorted.bam + .bai | test.rna.paired_end.sorted.bam + .bai | `illumina/bam/` |
-| FASTA (genome) | genome.fasta | — | `genome/` |
-| GTF | genome.gtf | — | `genome/` |
-| VCF | create minimal inline (see Attempt 3 VCF section) | — | — |
+The catalog is a Groovy config file (~900 lines) with entries like:
+```
+test_rnaseq_1_fastq_gz = "${params.test_data_base}/data/genomics/homo_sapiens/illumina/fastq/test_rnaseq_1.fastq.gz"
+```
 
-For AIRR/immune repertoire pipelines (tools like mixcr, immunarch, trust4, AIRR tools):
-prefer the `test_airrseq_*` files over generic RNA-seq files.
+The base URL to substitute for `${params.test_data_base}` is:
+```
+https://raw.githubusercontent.com/nf-core/test-datasets/modules
+```
 
-Download each file:
+### 2b. Grep for matching entries by input type
+
+Use these grep patterns to find relevant entries. Prefer `homo_sapiens` entries
+over other organisms. For AIRR/immune repertoire pipelines (mixcr, trust4,
+immunarch, arcasHLA) prefer `airrseq` or `rna` entries over generic DNA.
+
+| Input type | Grep pattern |
+|---|---|
+| FASTQ paired-end RNA-seq / immune | `grep "homo_sapiens.*rnaseq.*fastq_gz\b"` |
+| FASTQ paired-end AIRR / immune UMI | `grep "homo_sapiens.*airrseq.*fastq"` |
+| FASTQ paired-end DNA | `grep "homo_sapiens.*illumina.*fastq.*test_[12]"` |
+| FASTQ single-end | `grep "homo_sapiens.*rnaseq_1.*fastq_gz\b"` (use R1 only) |
+| BAM sorted + indexed | `grep "homo_sapiens.*sorted.*bam\"" | grep -v bai` |
+| BAM index (.bai) | `grep "homo_sapiens.*sorted.*bam_bai"` |
+| BAM RNA sorted | `grep "homo_sapiens.*rna.*paired_end.*sorted.*bam\""` |
+| FASTA genome | `grep "homo_sapiens.*genome.*fasta\""` |
+| GTF | `grep "homo_sapiens.*genome.*gtf\""` |
+| VCF | `grep "homo_sapiens.*vcf\""` |
+
+Example for paired-end RNA-seq:
+```bash
+grep "homo_sapiens.*rnaseq.*fastq_gz" /tmp/nf_test_data.config | head -4
+```
+
+### 2c. Extract and construct the download URL
+
+For each matching line, extract the path after `${params.test_data_base}`:
+```bash
+grep "homo_sapiens.*rnaseq.*fastq_gz" /tmp/nf_test_data.config \
+  | sed 's|.*${params.test_data_base}\(.*\)".*|\1|' \
+  | head -2
+```
+
+Prepend the base URL:
+```
+https://raw.githubusercontent.com/nf-core/test-datasets/modules<path>
+```
+
+### 2d. Download the files
+
 ```bash
 cd $PIPELINE_DIR
-curl -fsSL -o test_data/<filename> <base_url><path_suffix><filename>
-# For BAM, also download the index:
-curl -fsSL -o test_data/<filename>.bai <base_url><path_suffix><filename>.bai
+curl -fsSL -o test_data/<filename> <full_url>
+# For BAM, also fetch the index:
+curl -fsSL -o test_data/<filename>.bai <full_url>.bai
 ```
+
+Need 2 distinct files for 2 samples. If the catalog only has 1 FASTQ pair,
+download it twice under different sample names.
 
 If all downloads succeed → **skip Attempt 3**.
 

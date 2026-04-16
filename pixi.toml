@@ -10,3 +10,5 @@ version = "0.1.0"
 [dependencies]
 nextflow = ">=25.10.4,<26"
 nf-core = ">=3.5.2,<4"
+defusedxml = ">=0.7.1,<0.8"
+lxml = ">=6.0.4,<7"

@@ -37,27 +37,6 @@ This guide is organized into concept-based modules stored in the [.memory](./.me
 
 ---
 
-## Quick Reference
-
-**Create a new pipeline** (address Trinity in chat):
-```
-Trinity, I need a <name> pipeline that <does X with tool Y>.
-```
-
-**Test locally:**
-```bash
-nextflow run main.nf -profile test --samplesheet test_data/samplesheet_test.csv
-```
-
-**Deploy to GCP:**
-```bash
-pixi run nextflow run main.nf -profile gcp \
-  --samplesheet gs://bucket/samples.csv \
-  --outdir gs://bucket/results
-```
-
----
-
 ## Agent Routing
 
 When the user addresses **Trinity** or asks to build a new pipeline, you MUST read

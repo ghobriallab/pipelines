@@ -1,3 +1,10 @@
+---
+name: run-local
+description: Runs a Nextflow pipeline locally with test data, performs stub and real runs, auto-fixes common configuration errors (one fix per error), and verifies output files exist. Spawn after docker-build and get-test-data have both completed successfully.
+tools: Bash, Read, Edit, Glob, Grep
+model: sonnet
+---
+
 # Run Local Agent
 
 You are the local execution specialist for a Nextflow pipeline. Your job is to
