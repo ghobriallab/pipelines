@@ -2,6 +2,27 @@
 
 This directory contains Claude Code commands for pipeline development workflows.
 
+## Creating a new pipeline
+
+Address **Trinity** directly in the chat — Trinity is the orchestrator that handles the full lifecycle (skeleton → Docker → test data → local run → GCP run):
+
+```
+Trinity, I need a <name> pipeline that <does X with tool Y>.
+```
+
+Trinity spawns four specialized agents internally:
+
+| Agent | Purpose |
+|-------|---------|
+| `docker-build.md` | Verifies or builds container images; pushes to Artifact Registry |
+| `get-test-data.md` | Creates minimal valid test data matched to the pipeline's input types |
+| `run-local.md` | Runs the pipeline locally; auto-fixes common config/container errors |
+| `run-gcp.md` | Verifies GCP environment; runs on Google Batch; monitors and diagnoses |
+
+Agents are NOT slash commands and cannot be invoked directly by the user.
+
+---
+
 ## Available Commands
 
 ### `/setup-pipeline`
@@ -68,6 +89,8 @@ cd nextflow-my-tool
 /add-process                   # Add first process (e.g., "samtools sort")
 /add-process                   # Add second process (e.g., "custom analysis")
 ```
+
+---
 
 ## Creating New Subcommands
 

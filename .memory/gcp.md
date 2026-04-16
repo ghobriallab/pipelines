@@ -26,7 +26,7 @@ profiles {
 
         process {
             executor = 'google-batch'
-            disk = '200 GB'                       // Default; override per-process in modules.config
+            disk = '100 GB'                       // Default; override per-process in modules.config
         }
 
         google {

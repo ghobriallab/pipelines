@@ -1,7 +1,7 @@
 # Nextflow Pipeline Development Guide - Ghobrial Lab
 
-**Version**: 2.0.0
-**Last Updated**: 2026-01-27
+**Version**: 3.0.0
+**Last Updated**: 2026-04-15
 **Target**: Lightweight (2-3 process) pipelines on Google Cloud Platform
 
 ---
@@ -37,23 +37,12 @@ This guide is organized into concept-based modules stored in the [.memory](./.me
 
 ---
 
-## Quick Reference
+## Agent Routing
 
-**Create a new pipeline:**
-```bash
-./.claude/commands/new-pipeline my-pipeline-name
-cd my-pipeline-name && pixi install
-```
-
-**Test locally:**
-```bash
-nextflow run main.nf -profile test,docker --samplesheet test.csv
-```
-
-**Deploy to GCP:**
-```bash
-nextflow run main.nf -profile gcp --samplesheet gs://bucket/samples.csv
-```
+When the user addresses **Trinity** or asks to build a new pipeline, you MUST read
+[.claude/agents/trinity.md](./.claude/agents/trinity.md) and follow its routing rules
+**before taking any action**. The critical rule: always spawn Trinity via
+`Agent(subagent_type: "trinity", ...)` — never handle pipeline creation inline.
 
 ---
 

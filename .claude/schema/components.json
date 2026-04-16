@@ -1,0 +1,115 @@
+{
+  "version": "1.0",
+  "components": [
+    {
+      "id": "trinity",
+      "type": "agent",
+      "name": "Trinity",
+      "role": "Orchestrator",
+      "goal": "End-to-end pipeline creation from skeleton to passing GCP run",
+      "inputs": ["pipeline_name", "tool_list", "input_data_type", "container_preference", "test_data_path"],
+      "outputs": ["pipeline_dir", "container_image_url", "local_run_status", "gcp_run_status"],
+      "invokes": ["docker-resolve", "docker-build", "get-test-data", "run-local", "run-gcp", "setup-pipeline"],
+      "spawned_by": ["user"],
+      "tools": ["Bash", "Read", "Edit", "Write", "Glob", "Grep", "Agent", "WebSearch"]
+    },
+    {
+      "id": "docker-build",
+      "type": "agent",
+      "name": "Docker Build",
+      "role": "Container specialist",
+      "goal": "Build and push custom Docker image to Artifact Registry",
+      "inputs": ["pipeline_dir", "tool_list", "container_preference", "GCP_PROJECT", "GCP_REGION", "ARTIFACT_REGISTRY"],
+      "outputs": ["image_url", "strategy:BUILD_CUSTOM"],
+      "invokes": [],
+      "spawned_by": ["trinity"],
+      "condition": "docker-resolve returns NOT_FOUND",
+      "tools": ["Bash", "Read", "Edit", "Write", "Glob", "Grep"]
+    },
+    {
+      "id": "get-test-data",
+      "type": "agent",
+      "name": "Get Test Data",
+      "role": "Test data specialist",
+      "goal": "Populate test_data/ with minimal realistic files and a valid samplesheet",
+      "inputs": ["pipeline_dir", "input_data_type", "pipeline_purpose", "real_test_data_path"],
+      "outputs": ["samplesheet_test.csv", "test_data_files"],
+      "invokes": [],
+      "spawned_by": ["trinity"],
+      "tools": ["Bash", "Read", "Edit", "Write", "Glob", "Grep", "WebFetch"]
+    },
+    {
+      "id": "run-local",
+      "type": "agent",
+      "name": "Run Local",
+      "role": "Local executor",
+      "goal": "Stub + real Nextflow run locally; auto-fix common config errors",
+      "inputs": ["pipeline_dir", "container_image_url", "samplesheet_test.csv"],
+      "outputs": ["stub_status", "run_status", "results_test/", "execution_report.html"],
+      "invokes": [],
+      "spawned_by": ["trinity"],
+      "condition": "After docker-build and get-test-data succeed",
+      "tools": ["Bash", "Read", "Edit", "Glob", "Grep"]
+    },
+    {
+      "id": "run-gcp",
+      "type": "agent",
+      "name": "Run GCP",
+      "role": "GCP executor",
+      "goal": "Pre-flight checks + Nextflow run on Google Batch; diagnose cloud failures",
+      "inputs": ["pipeline_dir", "container_image_url", "samplesheet_test.csv", "GCP_PROJECT", "GCP_REGION", "GCP_WORK_DIR"],
+      "outputs": ["preflight_status", "batch_job_name", "run_status", "results_test/"],
+      "invokes": [],
+      "spawned_by": ["trinity"],
+      "condition": "After run-local passes",
+      "tools": ["Bash", "Read", "Edit", "Glob", "Grep"]
+    },
+    {
+      "id": "docker-resolve",
+      "type": "skill",
+      "name": "Docker Resolve",
+      "role": "Image resolver",
+      "goal": "Find a verified container image URL (custom or public); return NOT_FOUND if none exists",
+      "inputs": ["TOOL_NAME", "TOOL_VERSION", "GCP_PROJECT", "GCP_REGION", "ARTIFACT_REGISTRY"],
+      "outputs": ["strategy", "image_url"],
+      "strategies": ["USE_EXISTING_CUSTOM", "USE_EXISTING_PUBLIC", "POPULATE_PUBLIC", "NOT_FOUND"],
+      "invokes": [],
+      "spawned_by": ["trinity"],
+      "tools": ["Bash"]
+    },
+    {
+      "id": "seqera",
+      "type": "skill",
+      "name": "Seqera AI CLI",
+      "role": "Bioinformatics AI bridge",
+      "goal": "Answer Nextflow / Seqera Platform / bioinformatics questions via headless Seqera AI CLI",
+      "inputs": ["natural_language_query"],
+      "outputs": ["ai_response"],
+      "invokes": [],
+      "spawned_by": ["trinity", "user"],
+      "tools": ["Bash(seqera:*)"]
+    },
+    {
+      "id": "setup-pipeline",
+      "type": "command",
+      "name": "setup-pipeline.sh",
+      "role": "Skeleton generator",
+      "goal": "Create nextflow-<name>/ directory with all boilerplate files",
+      "inputs": ["pipeline_name", "GCP_PROJECT", "GCP_REGION", "GCP_WORK_DIR", "ARTIFACT_REGISTRY"],
+      "outputs": ["main.nf", "nextflow.config", "docker/Dockerfile", "pixi.toml", "test_data/samplesheet_test.csv"],
+      "invokes": [],
+      "spawned_by": ["trinity"]
+    }
+  ],
+  "relationships": [
+    {"from": "user",           "to": "trinity",        "label": "invokes"},
+    {"from": "trinity",        "to": "setup-pipeline", "label": "runs (Phase 1)"},
+    {"from": "trinity",        "to": "docker-resolve", "label": "invokes (Phase 3a)"},
+    {"from": "docker-resolve", "to": "trinity",        "label": "returns strategy+url"},
+    {"from": "trinity",        "to": "docker-build",   "label": "spawns if NOT_FOUND (Phase 3b)"},
+    {"from": "trinity",        "to": "get-test-data",  "label": "spawns parallel (Phase 3c)"},
+    {"from": "trinity",        "to": "run-local",      "label": "spawns sequential (Phase 4)"},
+    {"from": "trinity",        "to": "run-gcp",        "label": "spawns sequential (Phase 5)"},
+    {"from": "trinity",        "to": "seqera",         "label": "queries (optional, any phase)"}
+  ]
+}

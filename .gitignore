@@ -13,3 +13,8 @@ node**
 package**
 
 pixi.lock
+nextflow-*
+summit**
+prompt*
+*node_modules**
+*.env
