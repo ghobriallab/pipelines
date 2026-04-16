@@ -1,0 +1,15 @@
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+# Local env with real credentials (never commit)
+.env
+.mcp.json
+
+
+nextflow*/*
+nf-hello**
+node**
+package**
+
+pixi.lock

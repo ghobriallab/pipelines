@@ -1,0 +1,12 @@
+[workspace]
+authors = ["Lorena Pantano <lorena.pantano@gmail.com>"]
+channels = ["conda-forge", "bioconda"]
+name = "pipelines"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.13.*"
+pip = ">=25.3,<26"
