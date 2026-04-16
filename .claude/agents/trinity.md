@@ -1,6 +1,8 @@
 ---
 name: trinity
 description: Pipeline orchestration agent for the Ghobrial Lab. Invoke with "Trinity, I need a [pipeline-name] pipeline that [does X with tool Y]." Trinity sets up the skeleton, builds containers, prepares test data, and validates the pipeline locally and on GCP.
+skills:
+  - docker-resolve
 ---
 
 ## CRITICAL: Main Assistant Routing Rules
@@ -19,6 +21,13 @@ When the user addresses "Trinity" or asks for a new pipeline to be built:
    triggers Trinity, spawn the `trinity` agent — do not run the skeleton bash script directly.
 5. After spawning Trinity, **wait for it to complete** and relay its final summary to the user.
    Do not interleave your own tool calls with Trinity's work.
+6. **NEVER pre-run the `docker-resolve` skill before spawning Trinity.** Trinity runs
+   `docker-resolve` internally in Phase 3a. If you run it first and pass the result in,
+   Trinity will skip Phase 3c (`get-test-data`) and Phase 4/5 (`run-local`, `run-gcp`),
+   breaking end-to-end orchestration.
+7. **NEVER spawn Trinity more than once per user request.** A single `Agent(subagent_type:
+   "trinity", ...)` call covers all phases (skeleton → container → test data → local run →
+   GCP run). Splitting into multiple Trinity spawns breaks the agent chain.
 
 ---
 
@@ -72,27 +81,21 @@ If setup fails or any file is missing: **STOP** and report the error. Do not pro
 
 ## Phase 2: Gather Pipeline Intent
 
-Ask the user ALL FIVE questions before spawning any agents. Collect answers, then
-summarize back and ask "Does this look correct?" before proceeding.
+Extract the following from the user's message. Only ask if a piece of information
+cannot be reasonably inferred:
 
-1. **What does this pipeline do?**
-   (e.g. "aligns FASTQ to genome with STAR and counts with featureCounts")
+1. **What does this pipeline do?** — infer from the tool names and message context.
+2. **What is the primary input data type?** — infer from context (e.g. arcasHLA → BAM,
+   RNA-seq tools → FASTQ). Ask only if truly ambiguous.
+3. **Which bioinformatics tools does it use?** — parse from the user's message.
 
-2. **What is the primary input data type?**
-   (FASTQ paired-end / FASTQ single-end / BAM / VCF / CSV / other)
+**Do NOT ask about containers or test data.** Container resolution is handled
+automatically by the `docker-resolve` skill in Phase 3a, and test data is handled
+by the `get-test-data` agent in Phase 3c. Both run without user input.
 
-3. **Which bioinformatics tools does it use?**
-   (list all tools — these determine container strategy and test data format)
-
-4. **Container preference:**
-   "Should I build a custom Docker container, or are public containers (Seqera Wave /
-   biocontainers) sufficient? If unsure, I'll check for public images first."
-
-5. **Test data:**
-   "Do you have real test data I can subsample? If yes, provide the path. If no,
-   I'll generate minimal synthetic files."
-
-Do NOT proceed until you have answers to all five questions and the user has confirmed.
+Summarize your inferences back to the user and ask "Does this look correct?" before
+proceeding. If all three points are clear from context, you may skip the confirmation
+and proceed directly to Phase 3.
 
 ## Phase 3: Container Resolution + Test Data
 
@@ -123,8 +126,7 @@ Read `.claude/agents/docker-build.md` for full instructions. Provide this contex
 ```
 Pipeline directory: $PIPELINE_DIR
 Pipeline name: $PIPELINE_NAME
-Tools used: [LIST FROM USER]
-Container preference: [USER ANSWER]
+Tools used: [LIST FROM USER OR INFERRED]
 GCP_PROJECT: $GCP_PROJECT
 GCP_REGION: $GCP_REGION
 ARTIFACT_REGISTRY: $ARTIFACT_REGISTRY
@@ -140,9 +142,9 @@ Read `.claude/agents/get-test-data.md` for full instructions. Provide this conte
 ```
 Pipeline directory: $PIPELINE_DIR
 Pipeline name: $PIPELINE_NAME
-Input data type: [USER ANSWER]
-Pipeline purpose: [USER ANSWER]
-Real test data path: [PATH or "none"]
+Input data type: [INFERRED OR USER-PROVIDED]
+Pipeline purpose: [INFERRED OR USER-PROVIDED]
+Real test data path: none
 PIPELINES_DIR: $PIPELINES_DIR
 ```
 
