@@ -99,24 +99,23 @@ and proceed directly to Phase 3.
 
 ## Phase 3: Container Resolution + Test Data
 
-### Step 3a: Resolve container (skill — runs inline, no agent spawn)
+### Step 3a: Resolve container (use preloaded docker-resolve knowledge — do NOT invoke the Skill tool)
 
-Invoke the `docker-resolve` skill for each tool listed by the user. Provide:
-```
-TOOL_NAME: <tool-name>
-TOOL_VERSION: <tool-version or "any">
-GCP_PROJECT: $GCP_PROJECT
-GCP_REGION: $GCP_REGION
-ARTIFACT_REGISTRY: $ARTIFACT_REGISTRY
-PIPELINES_DIR: $PIPELINES_DIR
-```
+The `docker-resolve` skill is preloaded into your context via the `skills` frontmatter.
+**Do NOT call the Skill tool for docker-resolve.** Using the Skill tool mid-conversation
+outputs a response to the parent agent and terminates Trinity prematurely.
 
-The skill returns one of:
-- `STRATEGY: USE_EXISTING_CUSTOM` / `USE_EXISTING_PUBLIC` / `POPULATE_PUBLIC` → `IMAGE_URL: <url>`
-- `STRATEGY: NOT_FOUND` → no usable image exists
+Instead, use the docker-resolve knowledge already in your context to run the resolution
+logic directly with Bash tool calls. Follow the three-check sequence from that knowledge:
+1. Check Artifact Registry for an existing custom image
+2. Check existing container directives in pipeline files
+3. Check public biocontainers/Wave
 
-**If the skill returns a confirmed IMAGE_URL:** record it and skip Step 3b.
-**If the skill returns NOT_FOUND:** proceed to Step 3b.
+Record the result internally as `IMAGE_URL` and `STRATEGY`. Do not emit a standalone
+response — continue immediately to Step 3b/3c.
+
+**If a confirmed IMAGE_URL was found:** record it and skip Step 3b.
+**If NOT_FOUND:** proceed to Step 3b.
 
 ### Step 3b (conditional): Spawn docker-build agent
 

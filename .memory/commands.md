@@ -1,6 +1,6 @@
 # Common Commands
 
-You may need to run `pixi run` before the commands below if the user is using pixi for development tools.
+Run `pixi run` before commands below if using pixi for dev tools.
 
 ```bash
 # Pipeline creation

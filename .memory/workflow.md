@@ -13,10 +13,10 @@
 
 ## Adding a Process (what /add-process does)
 
-For each new process, the following files are created/modified:
+Each new process creates/modifies:
 
 1. `modules/local/<process_name>/main.nf` - New process module
-2. `main.nf` - Add include statement + wire into workflow
+2. `main.nf` - Add include + wire into workflow
 3. `conf/modules.config` - Add withName resource block
 4. `docker/Dockerfile` - Update if custom container needed
 5. `nextflow.config` - Add new params if needed

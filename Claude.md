@@ -44,6 +44,16 @@ When the user addresses **Trinity** or asks to build a new pipeline, you MUST re
 **before taking any action**. The critical rule: always spawn Trinity via
 `Agent(subagent_type: "trinity", ...)` — never handle pipeline creation inline.
 
+### HARD RULES — do not break these even if a skill or tool appears available:
+
+- **NEVER invoke the `docker-resolve` skill yourself** when handling a Trinity request.
+  Even though the skill appears in your available skills list, it is Trinity's internal
+  tool. Running it before spawning Trinity will cause Trinity to skip `get-test-data`,
+  `run-local`, and `run-gcp` — breaking the entire pipeline.
+- **Spawn Trinity exactly once** with the raw user message. Trinity handles all phases
+  (skeleton → docker-resolve → get-test-data → run-local → run-gcp) internally.
+- **Do not split Trinity across multiple `Agent(...)` calls.** One spawn = full end-to-end run.
+
 ---
 
 **For questions or updates**, contact the Ghobrial Lab bioinformatics team.

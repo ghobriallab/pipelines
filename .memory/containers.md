@@ -2,7 +2,7 @@
 
 ## Container Selection Priority (real usage)
 
-check the URL exists always.
+Always verify URL exists.
 
 1. **Seqera Wave** (preferred for common bioinformatics tools):
    `community.wave.seqera.io/library/<tool>:<version>--<hash>`
@@ -13,14 +13,14 @@ check the URL exists always.
    `quay.io/biocontainers/samtools:1.17--h00cdaf9_0`
    Used in: bclconvert
 
-3. **Minimal base image** (for simple operations like cat, gzip):
+3. **Minimal base image** (for simple ops like cat, gzip):
    `ubuntu:22.04`
    Used in: fastq-merge
 
-4. **Custom GCP Artifact Registry** (when tool needs custom build):
+4. **Custom GCP Artifact Registry** (tool needs custom build):
    `$ARTIFACT_REGISTRY/<repo>/<image>:<version>`
-   Claude reads `$ARTIFACT_REGISTRY` and `$GCP_PROJECT` env vars to build the full path.
-   Always use `$ARTIFACT_REGISTRY` verbatim — never derive a regional variant like `us-east1-docker.pkg.dev`.
+   Claude reads `$ARTIFACT_REGISTRY` and `$GCP_PROJECT` env vars for full path.
+   Use `$ARTIFACT_REGISTRY` verbatim — never derive regional variant like `us-east1-docker.pkg.dev`.
    Used in: arcashla, cd45isoform, cellranger
 
 ## Container Specification Patterns
@@ -34,7 +34,7 @@ process SAMTOOLS_INDEX {
 ```
 
 ### Global default via param (for single-container pipelines)
-In nextflow.config (Claude fills in registry path from $ARTIFACT_REGISTRY/$GCP_PROJECT):
+In nextflow.config (Claude fills registry path from $ARTIFACT_REGISTRY/$GCP_PROJECT):
 ```groovy
 params {
     tool_container = '$ARTIFACT_REGISTRY/<repo>/<image>:<version>'
@@ -72,18 +72,15 @@ RUN conda install -y -c conda-forge -c bioconda \
     && conda clean -afy
 ```
 
-If the tool repository has an env file, use that to install dependencies.
+If tool repo has env file, use it for deps.
 
 ### Conda-based with baked-in reference database (arcashla pattern)
 
-Some tools (arcasHLA, STAR, kallisto) require a reference database that must be
-downloaded at build time. Key lessons from arcasHLA:
+Some tools (arcasHLA, STAR, kallisto) need reference DB baked at build time. Key lessons from arcasHLA:
 
-1. **Always install `git`** if the tool fetches reference via `git clone`
-2. **Use a pinned version** (`--version X.Y.Z`) instead of `--update` / `--latest` —
-   large reference repos (e.g. IMGTHLA) use Git LFS; without `git-lfs`, clone only
-   downloads pointer files and the real data is silently missing
-3. Find the recommended pinned version in the tool's own test docs or README
+1. **Always install `git`** if tool fetches reference via `git clone`
+2. **Use pinned version** (`--version X.Y.Z`) not `--update`/`--latest` — large reference repos (e.g. IMGTHLA) use Git LFS; without `git-lfs`, clone only gets pointer files, real data silently missing
+3. Find pinned version in tool's test docs or README
 
 ```dockerfile
 FROM continuumio/miniconda3:latest
@@ -104,15 +101,14 @@ RUN tool-name reference --version X.Y.Z
 
 ### Build flag: always use `--platform linux/amd64`
 
-GCP Batch VMs are x86_64. Always pass `--platform linux/amd64` when building,
-especially on Apple Silicon Macs:
+GCP Batch VMs are x86_64. Always pass `--platform linux/amd64` when building, especially on Apple Silicon Macs:
 ```bash
 docker build --platform linux/amd64 -t image:tag .
 ```
 
 ## Build and Push Script
 
-Claude fills in PROJECT_ID and REGION defaults from `$GCP_PROJECT` and `$ARTIFACT_REGISTRY` env vars:
+Claude fills PROJECT_ID and REGION from `$GCP_PROJECT` and `$ARTIFACT_REGISTRY` env vars:
 
 ```bash
 #!/bin/bash
@@ -136,7 +132,7 @@ docker push ${LATEST_IMAGE}
 
 ## Known Container Images in Use
 
-Registry prefix is `$ARTIFACT_REGISTRY` (already includes project). Never append `/$GCP_PROJECT`.
+Registry prefix = `$ARTIFACT_REGISTRY` (includes project). Never append `/$GCP_PROJECT`.
 
 | Pipeline | Image | Source |
 |----------|-------|--------|

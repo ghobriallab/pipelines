@@ -11,7 +11,7 @@
 /setup-pipeline my-pipeline-name
 ```
 
-This creates `$PIPELINES_DIR/nextflow-<name>/` with full skeleton, runs `pixi install`, and initializes git.
+Creates `$PIPELINES_DIR/nextflow-<name>/` with full skeleton, runs `pixi install`, initializes git.
 
 ## Core Principles
 
@@ -21,18 +21,18 @@ This creates `$PIPELINES_DIR/nextflow-<name>/` with full skeleton, runs `pixi in
 - **GCP Batch**: https://cloud.google.com/batch/docs/nextflow
 
 ### Documentation-First
-Always refer to the [official Nextflow documentation](https://www.nextflow.io/docs/latest/) as the source of truth.
+Use [official Nextflow documentation](https://www.nextflow.io/docs/latest/) as source of truth.
 
 ### Lightweight Philosophy
-- **Simple over complex**: Pipelines that do one thing well
-- **Robust code**: Fail gracefully with clear error messages
-- **Minimal dependencies**: Use official containers when possible
-- **Clear structure**: Anyone should understand the pipeline by reading main.nf
+- **Simple over complex**: One thing, done well
+- **Robust code**: Fail gracefully, clear errors
+- **Minimal dependencies**: Official containers when possible
+- **Clear structure**: `main.nf` readable by anyone
 
 ### GCP-Native with Local Fallback
-- Design for Google Cloud Batch execution
-- Optimize for cost (spot instances, storage efficiency)
-- Support local Docker execution for development
+- Design for Google Cloud Batch
+- Optimize cost (spot instances, storage efficiency)
+- Support local Docker for dev
 
 ## Existing Pipelines
 

@@ -36,7 +36,7 @@ nextflow-<pipeline>/
 - Include statements: `include { PROCESS_NAME } from './modules/local/process_name/main'`
 - Process names: UPPERCASE (e.g., `CELLRANGER_COUNT`)
 - Directory names: lowercase with underscores (e.g., `cellranger_count/`)
-- versions.yml in main bioinformatics processes (can skip for utility processes)
+- versions.yml in main bioinformatics processes (skip for utility processes)
 - Docker container support always required
 - Stub implementations for testing workflow structure
 
@@ -49,8 +49,8 @@ nextflow-<pipeline>/
 | Resource labels | `nextflow.config` (cellranger-style) or `conf/modules.config` | process_low/medium/high |
 | Process logic | `modules/local/<name>/main.nf` | One process per file |
 | Workflow wiring | `main.nf` | Channel ops + process calls |
-| Container images | `docker/Dockerfile` + `docker/build_and_push.sh` | Only for custom builds |
-| Reference data | `reference/` | Small refs can be bundled |
+| Container images | `docker/Dockerfile` + `docker/build_and_push.sh` | Custom builds only |
+| Reference data | `reference/` | Small refs bundled here |
 
 ## pixi.toml Pattern
 
@@ -64,11 +64,11 @@ platforms = ["linux-64"]
 nextflow = ">=25.10.2,<26"
 ```
 
-- **Only dev tools** go in pixi.toml (nextflow, nf-test)
-- Pipeline tools belong in Docker containers
-- Platform: typically `linux-64` only (some add `osx-64`, `osx-arm64`)
+- **Dev tools only** in pixi.toml (nextflow, nf-test)
+- Pipeline tools → Docker containers
+- Platform: `linux-64` (some add `osx-64`, `osx-arm64`)
 
 ## Versioning
 - Semantic versioning (MAJOR.MINOR.PATCH)
-- Minimum Nextflow version `>=23.04.0`
+- Min Nextflow `>=23.04.0`
 - Use `publishDir` with configurable mode (`params.publish_dir_mode`)
