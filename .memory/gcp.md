@@ -2,8 +2,7 @@
 
 ## Environment Variables (Claude reads these when generating configs)
 
-When generating or updating pipeline configs, Claude reads these shell env vars
-to fill in the correct values instead of hardcoding them:
+Claude reads shell env vars to fill config values instead of hardcoding:
 
 | Env Var            | Purpose                          | Example                        |
 |--------------------|----------------------------------|--------------------------------|
@@ -13,11 +12,11 @@ to fill in the correct values instead of hardcoding them:
 | `ARTIFACT_REGISTRY`| Docker registry host             | `us-docker.pkg.dev`            |
 | `PIPELINES_DIR`    | Local pipelines root dir         | `/home/user/pipelines`         |
 
-Set these in your shell profile (`~/.bashrc` or `~/.zshrc`).
+Set in shell profile (`~/.bashrc` or `~/.zshrc`).
 
 ## Core GCP Profile (consistent across all pipelines)
 
-Values below are placeholders — Claude substitutes from env vars when creating files:
+Placeholders below — Claude substitutes from env vars when creating files:
 
 ```groovy
 profiles {
@@ -47,7 +46,7 @@ profiles {
 ```
 
 ### Variation: spot=false (bclconvert)
-BCLConvert sets `batch.spot = false` because conversion jobs are long-running and should not be preempted.
+BCLConvert sets `batch.spot = false` — conversion jobs long-running, must not preempt.
 
 ## Error Strategy (varies across pipelines)
 
@@ -56,8 +55,8 @@ BCLConvert sets `batch.spot = false` because conversion jobs are long-running an
 errorStrategy = { task.exitStatus in [143,137,104,134,139,14,125,50001,50005] ? 'retry' : 'ignore' }
 maxRetries = 2
 ```
-- 125 and 50001 are spot preemption codes
-- 14 is also a spot/resource code
+- 125 and 50001: spot preemption codes
+- 14: spot/resource code
 
 ### Without spot codes (older pipelines)
 ```groovy
@@ -65,7 +64,7 @@ errorStrategy = { task.exitStatus in [143,137,104,134,139] ? 'retry' : 'finish' 
 ```
 
 ### Error strategy values observed
-- `'ignore'` - cd45isoform template, cellranger (skip failures, continue pipeline)
+- `'ignore'` - cd45isoform template, cellranger (skip failures, continue)
 - `'finish'` - arcashla, bclconvert (finish running tasks, then stop)
 
 ## Resource Configuration (conf/modules.config)

@@ -54,7 +54,7 @@ process {
     container = params.arcashla_container
 }
 ```
-Then override per-process via container directive in the module when needed.
+Override per-process via container directive in module when needed.
 
 ### stageInMode 'copy' (when tools modify inputs in-place)
 Used in: cd45isoform (SAMTOOLS_INDEX, CD45_ISOFORM_QUANT)
@@ -102,8 +102,7 @@ task.ext.when == null || task.ext.when
 ```
 
 ### No versions.yml (simple utility processes)
-Some utility processes like SAMTOOLS_INDEX and PREP_FASTQS skip versions.yml.
-Keep it for processes running the main bioinformatics tool.
+Utility processes like SAMTOOLS_INDEX and PREP_FASTQS skip versions.yml. Keep for processes running main bioinformatics tool.
 
 ## Samplesheet Parsing Patterns
 
@@ -147,7 +146,7 @@ ch_samples
 
 ## ext.args Pattern (configurable arguments via modules.config)
 
-In the process:
+In process:
 ```groovy
 def args = task.ext.args ?: ''
 ```

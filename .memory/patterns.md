@@ -13,7 +13,7 @@ ch_samplesheet = Channel.fromPath(params.samplesheet, checkIfExists: true)
 ```
 
 ### Multi-row grouping (fastq-merge)
-Same sample_id on multiple rows gets grouped:
+Same `sample_id` multiple rows → grouped:
 ```groovy
 .groupTuple()
 .map { sid, file_lists -> tuple(sid, file_lists.flatten()) }
