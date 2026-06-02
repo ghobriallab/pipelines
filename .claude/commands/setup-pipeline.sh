@@ -156,10 +156,10 @@ params {
     // Publishing options
     publish_dir_mode        = 'copy'
 
-    // Max resource options
-    max_memory              = '64.GB'
-    max_cpus                = 16
-    max_time                = '48.h'
+    // GCP compute options
+    use_spot                = false
+    use_gpu                 = false
+
 }
 
 // Load module configurations
@@ -168,8 +168,8 @@ includeConfig 'conf/modules.config'
 // Process settings
 process {
     // Error strategy: retry on transient cloud/spot errors, ignore others
-    errorStrategy = { task.exitStatus in [143,137,104,134,139,14,125,50001] ? 'retry' : 'ignore' }
-    maxRetries = 2
+    errorStrategy = { task.exitStatus in [1,127] ? 'terminate' : task.exitStatus in [143,137,104,134,139,14,125,50001,5005] ? 'retry' : 'ignore' }
+    maxRetries = 5
 }
 
 // Execution profiles
@@ -185,9 +185,7 @@ profiles {
 
         process {
             executor = 'local'
-            cpus   = { check_max( 4, 'cpus' ) }
-            memory = { check_max( 16.GB * task.attempt, 'memory' ) }
-            time   = { check_max( 8.h * task.attempt, 'time' ) }
+
         }
     }
 
@@ -198,18 +196,20 @@ profiles {
         workDir = 'GCP_WORK_DIR_PLACEHOLDER'
 
         process {
-            executor = 'google-batch'
-            disk = '200 GB'
+            executor      = 'google-batch'
+            disk          = [request: 1500.GB, type: 'pd-balanced']
+            stageInMode   = 'copy'
+            stageOutMode  = 'copy'
+            machineType   = 'n2-*,c2-*,m3-*'
         }
 
         google {
-            project = 'GCP_PROJECT_PLACEHOLDER'
-            location = 'GCP_REGION_PLACEHOLDER'
-            batch {
-                spot = true
-                maxSpotAttempts = 5
-                bootDiskSize = '50 GB'
-            }
+            project            = 'GCP_PROJECT_PLACEHOLDER'
+            location           = 'GCP_REGION_PLACEHOLDER'
+            enableRequesterPaysBuckets = true
+            batch.spot              = params.use_spot
+            batch.bootDiskSize      = 50.GB
+            batch.installGpuDrivers = params.use_gpu
         }
 
         docker {
@@ -223,9 +223,7 @@ profiles {
 
         params.samplesheet = "${projectDir}/test_data/samplesheet_test.csv"
         params.outdir      = "${projectDir}/results_test"
-        params.max_memory   = '8.GB'
-        params.max_cpus     = 4
-        params.max_time     = '2.h'
+
 
         docker {
             enabled = true
@@ -239,37 +237,6 @@ profiles {
     }
 }
 
-// Function to ensure resource requirements don't exceed limits
-def check_max(obj, type) {
-    if (type == 'memory') {
-        try {
-            if (obj.compareTo(params.max_memory as nextflow.util.MemoryUnit) == 1)
-                return params.max_memory as nextflow.util.MemoryUnit
-            else
-                return obj
-        } catch (all) {
-            println "   ### ERROR ###   Max memory '${params.max_memory}' is not valid! Using default value: $obj"
-            return obj
-        }
-    } else if (type == 'time') {
-        try {
-            if (obj.compareTo(params.max_time as nextflow.util.Duration) == 1)
-                return params.max_time as nextflow.util.Duration
-            else
-                return obj
-        } catch (all) {
-            println "   ### ERROR ###   Max time '${params.max_time}' is not valid! Using default value: $obj"
-            return obj
-        }
-    } else if (type == 'cpus') {
-        try {
-            return Math.min( obj, params.max_cpus as int )
-        } catch (all) {
-            println "   ### ERROR ###   Max cpus '${params.max_cpus}' is not valid! Using default value: $obj"
-            return obj
-        }
-    }
-}
 
 // Manifest
 manifest {

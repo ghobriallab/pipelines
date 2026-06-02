@@ -7,7 +7,7 @@ Every process lives at `modules/local/<process_name>/main.nf`:
 ```groovy
 process PROCESS_NAME {
     tag "$sample_id"
-    label 'process_medium'                    // process_low, process_medium, or process_high
+    // Resources (cpus, memory, time) are set per-process by name in conf/modules.config — never use generic labels
     publishDir "${params.outdir}/${sample_id}/process_name", mode: params.publish_dir_mode
     container '<container_url>'
 

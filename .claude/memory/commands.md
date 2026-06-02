@@ -1,5 +1,9 @@
 # Common Commands
 
+Use Nextflow lsp in vscode to check for code in nextflow.
+
+Use nextflow lint to check issues with code.
+
 Run `pixi run` before commands below if using pixi for dev tools.
 
 ```bash

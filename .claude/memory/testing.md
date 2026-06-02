@@ -7,9 +7,6 @@ Every pipeline has `test` profile in nextflow.config:
 test {
     params.samplesheet = "${projectDir}/test_data/samplesheet_test.csv"
     params.outdir      = "${projectDir}/results_test"
-    params.max_memory   = '8.GB'
-    params.max_cpus     = 4
-    params.max_time     = '2.h'
 
     docker { enabled = true }
     process { cpus = 4; memory = 8.GB; time = 2.h }

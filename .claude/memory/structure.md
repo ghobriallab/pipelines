@@ -46,7 +46,7 @@ nextflow-<pipeline>/
 |-----------|----------|-------|
 | Pipeline params | `nextflow.config` params block | Including container URLs |
 | Per-process resources | `conf/modules.config` | cpus, memory, time, disk, ext.args |
-| Resource labels | `nextflow.config` (cellranger-style) or `conf/modules.config` | process_low/medium/high |
+| Per-process resources | `conf/modules.config` only | Always `withName`, never generic `withLabel` |
 | Process logic | `modules/local/<name>/main.nf` | One process per file |
 | Workflow wiring | `main.nf` | Channel ops + process calls |
 | Container images | `docker/Dockerfile` + `docker/build_and_push.sh` | Custom builds only |
